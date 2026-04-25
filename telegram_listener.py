@@ -74,7 +74,19 @@ async def start():
         await client.start(phone=TELEGRAM_PHONE)
     print("[Listener] Terhubung ke Telegram!")
 
-    channel = await client.get_entity(SIGNAL_CHANNEL)
+    # Cari channel dari daftar dialog (untuk private channel tanpa username)
+    channel = None
+    target_id = str(SIGNAL_CHANNEL).replace("-100", "").strip()
+    async for dialog in client.iter_dialogs():
+        dialog_id = str(dialog.entity.id)
+        if dialog_id == target_id or str(dialog.entity.id) == SIGNAL_CHANNEL:
+            channel = dialog.entity
+            print(f"[Listener] Channel ditemukan: {dialog.name}")
+            break
+
+    if channel is None:
+        raise ValueError(f"Channel tidak ditemukan: {SIGNAL_CHANNEL}. Pastikan akun Telegram kamu sudah join channel tersebut.")
+
     client.add_event_handler(
         handle_new_message,
         events.NewMessage(chats=channel),
